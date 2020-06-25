@@ -5,10 +5,12 @@ import IconButton from "@material-ui/core/IconButton";
 import Typography from "@material-ui/core/Typography";
 import InputBase from "@material-ui/core/InputBase";
 import { fade, makeStyles } from "@material-ui/core/styles";
-import MenuIcon from "@material-ui/icons/Menu";
+// import MenuIcon from "@material-ui/icons/Menu";
 import SearchIcon from "@material-ui/icons/Search";
 import { initialState, reducer } from "./../reducers/Todo";
 import TodoItem from "./TodoItem";
+// import propTypes from "prop-types";
+import AddIcon from "@material-ui/icons/Add";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -65,11 +67,17 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function Todo() {
+function Todo(props) {
   console.log("todo component render...");
   const classes = useStyles();
 
-  // const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, initialState);
+
+  function getTodos() {
+    return state.todos.map((todo) => {
+      return <TodoItem key={todo._id} todo={todo} />;
+    });
+  }
 
   return (
     <div className={classes.root}>
@@ -81,7 +89,7 @@ function Todo() {
             color="default"
             aria-label="open drawer"
           >
-            <MenuIcon />
+            <AddIcon />
           </IconButton>
           <Typography className={classes.title} variant="h6" noWrap>
             Todo
@@ -101,8 +109,7 @@ function Todo() {
           </div>
         </Toolbar>
       </AppBar>
-      <TodoItem />
-      <TodoItem />
+      {getTodos()}
     </div>
   );
 }

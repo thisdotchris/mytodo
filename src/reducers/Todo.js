@@ -27,7 +27,7 @@ export const initialState = {
       _id: 3,
       title: "todo #3",
       description: "todo #3 description",
-      category: 2,
+      category: 1,
       date: new Date(), //date created
       completed: false,
       deleted: false,

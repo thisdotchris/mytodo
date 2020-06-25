@@ -1,5 +1,4 @@
-import React, { useReducer, useState, Fragment } from "react";
-import { initialState, reducer } from "./../reducers/Category";
+import React, { useState, Fragment, useContext } from "react";
 import * as actions from "./../reducers/ActionTypes";
 import List from "@material-ui/core/List";
 import AddIcon from "@material-ui/icons/Add";
@@ -9,6 +8,7 @@ import ListSubheader from "@material-ui/core/ListSubheader";
 import TextField from "@material-ui/core/TextField";
 import CloseIcon from "@material-ui/icons/Close";
 import CategoryItem from "./CategoryItem";
+import { AppContext } from "./../App";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -23,7 +23,8 @@ function Category() {
 
   const classes = useStyles();
 
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const { category } = useContext(AppContext);
+  const { state, dispatch } = category;
 
   const [_id, set_id] = useState(null);
   const [name, setName] = useState("");
