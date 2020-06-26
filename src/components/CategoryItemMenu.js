@@ -11,6 +11,11 @@ function CategoryItemMenu(props) {
   const [showMenu, setShowMenu] = useState(false);
   const [update, setUpdate] = useState(false);
 
+  React.useEffect(() => {
+    setShowMenu(props.open);
+    setUpdate(props.open);
+  }, [props.open]);
+
   function onMenu() {
     setShowMenu(!showMenu);
     props.onMenuClose();
@@ -57,7 +62,12 @@ function CategoryItemMenu(props) {
       return (
         <Fragment>
           {onUpdate()}
-          <IconButton onClick={props.onRemove}>
+          <IconButton
+            onClick={() => {
+              props.onRemove();
+              onMenu();
+            }}
+          >
             <DeleteIcon />
           </IconButton>
           <IconButton onClick={onMenu}>
@@ -77,6 +87,7 @@ function CategoryItemMenu(props) {
 }
 
 CategoryItemMenu.prototype = {
+  open: propType.bool.isRequired,
   onUpdate: propType.func.isRequired,
   onUpdateSave: propType.func.isRequired,
   onRemove: propType.func.isRequired,

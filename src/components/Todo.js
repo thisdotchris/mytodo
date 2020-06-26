@@ -1,18 +1,30 @@
-import React, { useReducer } from "react";
+import React, { useContext, useState } from "react";
 import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
 import IconButton from "@material-ui/core/IconButton";
 import Typography from "@material-ui/core/Typography";
 import InputBase from "@material-ui/core/InputBase";
 import { fade, makeStyles } from "@material-ui/core/styles";
-// import MenuIcon from "@material-ui/icons/Menu";
 import SearchIcon from "@material-ui/icons/Search";
-import { initialState, reducer } from "./../reducers/Todo";
 import TodoItem from "./TodoItem";
-// import propTypes from "prop-types";
 import AddIcon from "@material-ui/icons/Add";
+import ListItem from "@material-ui/core/ListItem";
+import List from "@material-ui/core/List";
+import { AppContext } from "./../App";
+import * as actions from "./../reducers/ActionTypes";
+import Form from "./TodoForm";
+import DeleteForever from "@material-ui/icons/DeleteForever";
+import Checkbox from "@material-ui/core/Checkbox";
+import FormControlLabel from "@material-ui/core/FormControlLabel";
 
 const useStyles = makeStyles((theme) => ({
+  listRoot: {
+    width: "100%",
+    backgroundColor: theme.palette.background.paper,
+    position: "relative",
+    overflow: "auto",
+    maxHeight: 600,
+  },
   root: {
     flexGrow: 1,
   },
@@ -70,17 +82,77 @@ const useStyles = makeStyles((theme) => ({
 function Todo(props) {
   console.log("todo component render...");
   const classes = useStyles();
+  const appContext = useContext(AppContext);
+  const { state, dispatch } = appContext.todo;
+  const [showForm, setShowForm] = useState(false);
+  const [selectAll, setSelectAll] = React.useState(false);
+  const [todos, setTodos] = useState(state.todos);
 
-  const [state, dispatch] = useReducer(reducer, initialState);
+  function onAdd(value) {
+    dispatch({
+      type: actions.ADD_TODO,
+      payload: {
+        todo: value,
+      },
+    });
+  }
+
+  function onUpdate(value) {
+    dispatch({
+      type: actions.UPDATE_TODO,
+      payload: {
+        todo: value,
+      },
+    });
+  }
+
+  function onChecked(val) {
+    dispatch({
+      type: actions.UPDATE_TODO,
+      payload: {
+        todo: { ...val },
+      },
+    });
+  }
 
   function getTodos() {
-    return state.todos.map((todo) => {
-      return <TodoItem key={todo._id} todo={todo} />;
+    return [...state.todos]
+      .filter((todo, idx) => !todo.completed)
+      .map((todo, idx) => (
+        <ListItem button key={idx}>
+          <TodoItem key={todo._id} todo={todo} onChecked={onChecked} />
+        </ListItem>
+      ));
+  }
+
+  function selectAllTodos() {
+    dispatch({
+      type: actions.SET_TODO,
+      payload: {
+        todos: [...state.todos].map((t) => ({ ...t, checked: !selectAll })),
+      },
+    });
+  }
+
+  function onDeleteSelected() {
+    var temp = [...state.todos].filter((i) => i.checked === false);
+    dispatch({
+      type: actions.SET_TODO,
+      payload: {
+        todos: temp,
+      },
     });
   }
 
   return (
     <div className={classes.root}>
+      <Form
+        open={showForm}
+        onSubmit={onAdd}
+        onClose={() => {
+          setShowForm(false);
+        }}
+      ></Form>
       <AppBar position="static">
         <Toolbar>
           <IconButton
@@ -88,12 +160,31 @@ function Todo(props) {
             className={classes.menuButton}
             color="default"
             aria-label="open drawer"
+            onClick={() => {
+              setShowForm(true);
+            }}
           >
             <AddIcon />
           </IconButton>
           <Typography className={classes.title} variant="h6" noWrap>
-            Todo
+            Todos
           </Typography>
+          <IconButton onClick={onDeleteSelected}>
+            <DeleteForever />
+          </IconButton>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={selectAll}
+                onChange={() => {
+                  setSelectAll(!selectAll);
+                  selectAllTodos();
+                }}
+                name="selectAll"
+              />
+            }
+            label="Select All"
+          />
           <div className={classes.search}>
             <div className={classes.searchIcon}>
               <SearchIcon />
@@ -109,7 +200,7 @@ function Todo(props) {
           </div>
         </Toolbar>
       </AppBar>
-      {getTodos()}
+      <List className={classes.listRoot}>{getTodos()}</List>
     </div>
   );
 }
