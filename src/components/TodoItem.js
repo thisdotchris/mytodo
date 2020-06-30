@@ -10,7 +10,6 @@ import IconButton from "@material-ui/core/IconButton";
 import CategoryItemMenu from "./CategoryItemMenu";
 import CardContent from "@material-ui/core/CardContent";
 import TodoForm from "./TodoForm";
-import { AppContext, actionTypes } from "./../App";
 import DoneIcon from "@material-ui/icons/Done";
 import CardActions from "@material-ui/core/CardActions";
 
@@ -44,36 +43,26 @@ const useStyles = makeStyles((theme) => ({
   pointer: {
     cursor: "pointer",
   },
+  header: {
+    background: "#87bdd8",
+  },
 }));
 
 function TodoItem(props) {
   const classes = useStyles();
   const [open, setOpen] = React.useState(false);
   const [checked, setChecked] = React.useState(false);
-  const appContext = React.useContext(AppContext);
-  const { state, dispatch } = appContext.todo;
 
   React.useEffect(() => {
     setChecked(props.todo.checked);
   }, [props.todo.checked]);
 
   function onUpdate(val) {
-    dispatch({
-      type: actionTypes.UPDATE_TODO,
-      payload: {
-        todo: val,
-      },
-    });
-    console.log(val, state.todos);
+    props.onUpdate(val);
   }
 
   function onRemove(_id) {
-    dispatch({
-      type: actionTypes.REMOVE_TODO,
-      payload: {
-        _id,
-      },
-    });
+    props.onRemove(_id);
   }
 
   function onDone() {
@@ -102,7 +91,7 @@ function TodoItem(props) {
         }}
       />
       <CardHeader
-        className={classes.pointer}
+        style={{ background: props.todo.category.color }}
         avatar={
           <Avatar aria-label="recipe" className={classes.avatar}>
             T

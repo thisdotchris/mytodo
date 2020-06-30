@@ -51,7 +51,7 @@ function CategoryItem(props) {
   return (
     <ListItem button key={props.category._id}>
       <ListItemIcon>
-        <FolderIcon />
+        <FolderIcon style={{ color: props.category.color }} />
       </ListItemIcon>
       {editMode()}
       <CategoryItemMenu

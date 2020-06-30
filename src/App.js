@@ -2,19 +2,14 @@ import React, { useReducer, useState } from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import "./App.css";
 import Todo from "./components/Todo";
+import Category from "./components/Category";
 import * as CategoryReducer from "./reducers/Category";
 import * as TodoReducer from "./reducers/Todo";
-import AppBar from "@material-ui/core/AppBar";
-import Toolbar from "@material-ui/core/Toolbar";
-import IconButton from "@material-ui/core/IconButton";
-import Container from "@material-ui/core/Container";
-import StatIcon from "@material-ui/icons/Details";
-import TodoIcon from "@material-ui/icons/Note";
-import Category from "./components/Category";
-import Typography from "@material-ui/core/Typography";
-import CategoryIcon from "@material-ui/icons/Category";
 import * as ActionTypes from "./reducers/ActionTypes";
-import Daily from "./components/Daily";
+import Grid from "@material-ui/core/Grid";
+import Login from "./components/Login";
+import Signup from "./components/Signup";
+import ForgotPassword from "./components/ForgotPassword";
 
 export const actionTypes = ActionTypes;
 
@@ -30,6 +25,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export const AppContext = React.createContext({
+  user: {},
   category: {},
   todo: {},
   preview: {},
@@ -39,9 +35,8 @@ export const AppContext = React.createContext({
 function App() {
   const classes = useStyles();
 
-  const [isTodo, setIsTodo] = useState(true);
-  const [isCat, setIsCat] = useState(false);
-  const [isStat, setIsStat] = useState(false);
+  const [signup, setSignup] = useState(false);
+  const [reset, setReset] = useState(false);
 
   /**
    * Category Reducer
@@ -60,76 +55,65 @@ function App() {
   );
 
   /**
+   * User Reducer
+   */
+  const [userState, userDispatch] = useReducer((state, action) => {
+    switch (action.type) {
+      case "set":
+        return (state = { ...action.payload });
+      case "clear":
+        return {};
+      default:
+        return state;
+    }
+  }, {});
+
+  /**
    * App Context Value
    */
   const value = {
+    user: { state: userState, dispatch: userDispatch },
     todo: { state: todoState, dispatch: todoDispatch },
     category: { state: categoryState, dispatch: categoryDispatch },
   };
 
-  function onChange(s) {
-    if (s === "isTodo") {
-      setIsTodo(true);
-      setIsCat(false);
-      setIsStat(false);
-    } else if (s === "isCat") {
-      setIsTodo(false);
-      setIsCat(true);
-      setIsStat(false);
+  const RenderHome = () => {
+    return (
+      <div className={classes.root}>
+        <Grid container direction="row" justify="center">
+          <Grid item xx={2}>
+            <Category />
+          </Grid>
+          <Grid item xs>
+            <Todo
+              onLogout={() => {
+                userDispatch({ type: "set", payload: {} });
+              }}
+            />
+          </Grid>
+        </Grid>
+      </div>
+    );
+  };
+
+  const isLogin = () => {
+    if (JSON.stringify(userState) === JSON.stringify({})) {
+      return signup ? (
+        <Signup doSignup={() => setSignup(!signup)} />
+      ) : reset ? (
+        <ForgotPassword doReset={() => setReset(!reset)} />
+      ) : (
+        <Login
+          doSignup={() => setSignup(!signup)}
+          doReset={() => setReset(!reset)}
+        />
+      );
     } else {
-      setIsStat(true);
-      setIsTodo(false);
-      setIsCat(false);
+      return <RenderHome />;
     }
-  }
+  };
 
-  const renderBar = (
-    <AppBar position="static">
-      <Toolbar>
-        <Typography variant="h6">My Todo</Typography>
-        <IconButton
-          color="inherit"
-          onClick={() => {
-            onChange("isTodo");
-          }}
-        >
-          <TodoIcon />
-        </IconButton>
-        <IconButton
-          color="inherit"
-          onClick={() => {
-            setIsCat(true);
-            onChange("isCat");
-          }}
-        >
-          <CategoryIcon />
-        </IconButton>
-        <IconButton
-          color="inherit"
-          onClick={() => {
-            onChange("isStat");
-          }}
-        >
-          <StatIcon />
-        </IconButton>
-      </Toolbar>
-    </AppBar>
-  );
-
-  const renderTodo = isTodo ? <Todo /> : null;
-  const renderCategory = isCat ? <Category /> : null;
-  const renderDaily = isStat ? <Daily /> : null;
-
-  return (
-    <AppContext.Provider value={value}>
-      <Container maxWidth="sm">
-        {renderBar}
-        {renderTodo}
-        {renderCategory}
-        {renderDaily}
-      </Container>
-    </AppContext.Provider>
-  );
+  return <AppContext.Provider value={value}>{isLogin()}</AppContext.Provider>;
 }
 
 export default App;

@@ -4,7 +4,6 @@ import TextField from "@material-ui/core/TextField";
 import Dialog from "@material-ui/core/Dialog";
 import DialogActions from "@material-ui/core/DialogActions";
 import DialogContent from "@material-ui/core/DialogContent";
-import DialogContentText from "@material-ui/core/DialogContentText";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import propTypes from "prop-types";
 import FormControl from "@material-ui/core/FormControl";
@@ -26,10 +25,10 @@ const useStyles = makeStyles((theme) => ({
 
 function Form(props) {
   const classes = useStyles();
-
-  const [category, setCategory] = React.useState("");
-  const title = React.useRef("");
-  const description = React.useRef("");
+  const defaultSelect = "5efae72eb921f808f080db8e";
+  const [category, setCategory] = React.useState(defaultSelect);
+  const title = React.useRef();
+  const description = React.useRef();
 
   const appContext = React.useContext(AppContext);
   const { state } = appContext.category;
@@ -38,13 +37,15 @@ function Form(props) {
     if (props.todo) {
       title.current = props.todo.title;
       description.current = props.todo.description;
-      setCategory(props.todo.category);
+      // category.current = props.todo.category._id;
+      setCategory(props.todo.category._id);
     }
   }, [props.todo]);
 
   const handleChange = ({ target }) => {
     if (target.name === "category") {
       setCategory(target.value);
+      // category.current = target.value;
     } else if (target.name === "title") {
       title.current = target.value;
     } else if (target.name === "description") {
@@ -66,9 +67,10 @@ function Form(props) {
       <Select
         labelId="demo-simple-select-label"
         id="demo-simple-select"
-        value={category}
         name="category"
         defaultValue={category}
+        value={category}
+        // defaultValue={category.current}
         onChange={handleChange}
       >
         {renderCategories()}
@@ -112,12 +114,10 @@ function Form(props) {
           <Button
             onClick={() => {
               props.onSubmit({
-                _id: props.todo ? props.todo._id : Math.random(),
-                date: new Date(),
+                ...props.todo,
                 category: category,
                 title: title.current,
                 description: description.current,
-                user: props.todo ? props.todo.user : "user_id",
               });
               props.onClose();
             }}

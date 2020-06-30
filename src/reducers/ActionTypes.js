@@ -13,3 +13,5 @@ export const REMOVE_PREVIEW = "SET_PREVIEW";
 
 export const SET_STATISTIC = "SET_STATISTIC";
 export const REMOVE_STATISTIC = "SET_STATISTIC";
+
+export const SET_USER = "SET_USER";

@@ -2,40 +2,7 @@ import * as actions from "./ActionTypes";
 import { produce } from "immer";
 
 export const initialState = {
-  todos: [
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    7,
-    8,
-    9,
-    10,
-    11,
-    12,
-    13,
-    14,
-    15,
-    16,
-    17,
-    18,
-    19,
-    20,
-  ].map((i, idx) => {
-    return {
-      _id: idx,
-      title: `todo #${idx}`,
-      description: `todo #${idx} description asvduic liudbvldlvladfv iudguc digv c dfivubdigfuvciudgcvisdb cguibdiubiusdbivbdifvbiedcg iedbfvisdividbv asdcfversvgshvdrhvdbhvbvhbvbfvhfbvhb fvhtbvhvybjvtbvbv thvbvhtbhvtbgvhbvhbvh revhervhevshrsvhfcasfocnaceuipcgiupvcipgbipcg rgcnigcpiwjgbipjrcbgvcwntgi   ckgjnvshbdg`,
-      category: 2,
-      date: new Date(), //date created
-      completed: false,
-      deleted: false,
-      pinToTop: false,
-      checked: false,
-    };
-  }),
+  todos: [],
 };
 
 export function reducer(state, action) {

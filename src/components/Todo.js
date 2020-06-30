@@ -1,5 +1,4 @@
 import React, { useContext, useState } from "react";
-import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
 import IconButton from "@material-ui/core/IconButton";
 import Typography from "@material-ui/core/Typography";
@@ -14,8 +13,18 @@ import { AppContext } from "./../App";
 import * as actions from "./../reducers/ActionTypes";
 import Form from "./TodoForm";
 import DeleteForever from "@material-ui/icons/DeleteForever";
+import DoneIcon from "@material-ui/icons/DoneAll";
+import FavIcon from "@material-ui/icons/Favorite";
+import TodayIcon from "@material-ui/icons/Today";
 import Checkbox from "@material-ui/core/Checkbox";
+import TrashIcon from "@material-ui/icons/Delete";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
+import Badge from "@material-ui/core/Badge";
+import * as apiService from "./../services/api";
+import AccountIcon from "@material-ui/icons/AccountCircle";
+import Button from "@material-ui/core/Button";
+import Menu from "@material-ui/core/Menu";
+import MenuItem from "@material-ui/core/MenuItem";
 
 const useStyles = makeStyles((theme) => ({
   listRoot: {
@@ -82,26 +91,64 @@ const useStyles = makeStyles((theme) => ({
 function Todo(props) {
   console.log("todo component render...");
   const classes = useStyles();
-  const appContext = useContext(AppContext);
-  const { state, dispatch } = appContext.todo;
+  const { todo, user } = useContext(AppContext);
+  const { state, dispatch } = todo;
   const [showForm, setShowForm] = useState(false);
   const [selectAll, setSelectAll] = React.useState(false);
-  const [todos, setTodos] = useState(state.todos);
+  const [anchorEl, setAnchorEl] = React.useState(null);
 
-  function onAdd(value) {
+  // React.useEffect(() => {
+  //   if (state.todos.length === 0) {
+  //     apiService.getTodos().then((res) => {
+  //       if (res.data.length !== 0) {
+  //         dispatch({
+  //           type: actions.SET_TODO,
+  //           payload: {
+  //             todos: res.data,
+  //           },
+  //         });
+  //       }
+  //     });
+  //   }
+  // }, [state.todos]);
+
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  async function reqTodos() {
+    const todosResponse = await apiService.getTodos();
     dispatch({
-      type: actions.ADD_TODO,
+      type: actions.SET_TODO,
       payload: {
-        todo: value,
+        todos: todosResponse.data,
       },
     });
   }
 
-  function onUpdate(value) {
+  async function onAdd(value) {
+    await apiService.createTodo({
+      ...value,
+      user: user.state._id,
+    });
+    await reqTodos();
+  }
+
+  async function onUpdate(value) {
+    await apiService.updateTodo(value);
+    await reqTodos();
+  }
+
+  async function onRemove(id) {
+    await apiService.removeTodo(id);
     dispatch({
-      type: actions.UPDATE_TODO,
+      type: actions.REMOVE_TODO,
       payload: {
-        todo: value,
+        id,
       },
     });
   }
@@ -110,7 +157,7 @@ function Todo(props) {
     dispatch({
       type: actions.UPDATE_TODO,
       payload: {
-        todo: { ...val },
+        todo: { checked: val.checked, _id: val._id },
       },
     });
   }
@@ -120,7 +167,13 @@ function Todo(props) {
       .filter((todo, idx) => !todo.completed)
       .map((todo, idx) => (
         <ListItem button key={idx}>
-          <TodoItem key={todo._id} todo={todo} onChecked={onChecked} />
+          <TodoItem
+            key={todo._id}
+            todo={todo}
+            onChecked={onChecked}
+            onUpdate={onUpdate}
+            onRemove={onRemove}
+          />
         </ListItem>
       ));
   }
@@ -135,7 +188,13 @@ function Todo(props) {
   }
 
   function onDeleteSelected() {
-    var temp = [...state.todos].filter((i) => i.checked === false);
+    var temp = [...state.todos].filter((i) => {
+      if (i.checked === false) {
+        return i;
+      } else {
+        onRemove(i._id);
+      }
+    });
     dispatch({
       type: actions.SET_TODO,
       payload: {
@@ -143,6 +202,35 @@ function Todo(props) {
       },
     });
   }
+
+  const renderOnDeleteAll = (
+    /* !selectAll ? null : */ <IconButton onClick={onDeleteSelected}>
+      <DeleteForever />
+    </IconButton>
+  );
+
+  const RenderAccountMenu = () => (
+    <Menu
+      id="simple-menu"
+      anchorEl={anchorEl}
+      keepMounted
+      open={Boolean(anchorEl)}
+      onClose={handleClose}
+    >
+      <MenuItem onClick={handleClose}>My account</MenuItem>
+      <MenuItem
+        onClick={() => {
+          handleClose();
+          user.dispatch({
+            type: "clear",
+          });
+          props.onLogout();
+        }}
+      >
+        Logout
+      </MenuItem>
+    </Menu>
+  );
 
   return (
     <div className={classes.root}>
@@ -153,53 +241,74 @@ function Todo(props) {
           setShowForm(false);
         }}
       ></Form>
-      <AppBar position="static">
-        <Toolbar>
-          <IconButton
-            edge="start"
-            className={classes.menuButton}
-            color="default"
-            aria-label="open drawer"
-            onClick={() => {
-              setShowForm(true);
-            }}
-          >
-            <AddIcon />
-          </IconButton>
-          <Typography className={classes.title} variant="h6" noWrap>
-            Todos
-          </Typography>
-          <IconButton onClick={onDeleteSelected}>
-            <DeleteForever />
-          </IconButton>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={selectAll}
-                onChange={() => {
-                  setSelectAll(!selectAll);
-                  selectAllTodos();
-                }}
-                name="selectAll"
-              />
-            }
-            label="Select All"
-          />
-          <div className={classes.search}>
-            <div className={classes.searchIcon}>
-              <SearchIcon />
-            </div>
-            <InputBase
-              placeholder="Search…"
-              classes={{
-                root: classes.inputRoot,
-                input: classes.inputInput,
-              }}
-              inputProps={{ "aria-label": "search" }}
-            />
+      <Toolbar>
+        <IconButton
+          edge="start"
+          className={classes.menuButton}
+          color="default"
+          aria-label="open drawer"
+          onClick={() => {
+            setShowForm(true);
+          }}
+        >
+          <AddIcon />
+        </IconButton>
+        <Typography className={classes.title} variant="h6" noWrap>
+          Todos
+        </Typography>
+        <IconButton onClick={handleClick}>
+          <AccountIcon />
+        </IconButton>
+        <RenderAccountMenu />
+        <IconButton>
+          <Badge badgeContent={4} color="primary">
+            <TodayIcon />
+          </Badge>
+        </IconButton>
+        <IconButton>
+          <Badge badgeContent={8} color="secondary">
+            <FavIcon />
+          </Badge>
+        </IconButton>
+        <IconButton>
+          <Badge badgeContent={10} color="default">
+            <DoneIcon />
+          </Badge>
+        </IconButton>
+        <IconButton>
+          <Badge badgeContent={2} color="default">
+            <TrashIcon />
+          </Badge>
+        </IconButton>
+        <div className={classes.search}>
+          <div className={classes.searchIcon}>
+            <SearchIcon />
           </div>
-        </Toolbar>
-      </AppBar>
+          <InputBase
+            placeholder="Search…"
+            classes={{
+              root: classes.inputRoot,
+              input: classes.inputInput,
+            }}
+            inputProps={{ "aria-label": "search" }}
+          />
+        </div>
+        {renderOnDeleteAll}
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={selectAll}
+              onChange={() => {
+                setSelectAll(!selectAll);
+                selectAllTodos();
+              }}
+              name="selectAll"
+            />
+          }
+          label="Select All"
+        />
+      </Toolbar>
+      {/* </AppBar> */}
       <List className={classes.listRoot}>{getTodos()}</List>
     </div>
   );

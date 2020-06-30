@@ -2,13 +2,7 @@ import * as actions from "./ActionTypes";
 import { produce } from "immer";
 
 export const initialState = {
-  categories: [
-    { _id: 1, name: "category-1" },
-    { _id: 2, name: "category-2" },
-    { _id: 3, name: "category-3" },
-    { _id: 4, name: "category-4" },
-    { _id: 5, name: "category-5" },
-  ],
+  categories: [],
 };
 
 export function reducer(state, action) {
