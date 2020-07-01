@@ -1,4 +1,3 @@
-FROM nginx:1.19.0-alpine
 FROM node:12.18-alpine
 ENV API_URL=http://128.199.252.245:3001/mytodo/v1
 ENV AUTH_URL=http://128.199.252.245:3001/auth
