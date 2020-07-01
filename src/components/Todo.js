@@ -14,17 +14,13 @@ import * as actions from "./../reducers/ActionTypes";
 import Form from "./TodoForm";
 import DeleteForever from "@material-ui/icons/DeleteForever";
 import DoneIcon from "@material-ui/icons/DoneAll";
-import FavIcon from "@material-ui/icons/Favorite";
 import TodayIcon from "@material-ui/icons/Today";
-import Checkbox from "@material-ui/core/Checkbox";
 import TrashIcon from "@material-ui/icons/Delete";
-import FormControlLabel from "@material-ui/core/FormControlLabel";
 import Badge from "@material-ui/core/Badge";
 import * as apiService from "./../services/api";
-import AccountIcon from "@material-ui/icons/AccountCircle";
 import Button from "@material-ui/core/Button";
-import Menu from "@material-ui/core/Menu";
-import MenuItem from "@material-ui/core/MenuItem";
+import ExitToApp from "@material-ui/icons/ExitToApp";
+import { send } from "./../services/emitter";
 
 const useStyles = makeStyles((theme) => ({
   listRoot: {
@@ -91,34 +87,47 @@ const useStyles = makeStyles((theme) => ({
 function Todo(props) {
   console.log("todo component render...");
   const classes = useStyles();
-  const { todo, user } = useContext(AppContext);
+  const { todo, user, stat } = useContext(AppContext);
   const { state, dispatch } = todo;
   const [showForm, setShowForm] = useState(false);
-  const [selectAll, setSelectAll] = React.useState(false);
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [todos, _setTodos] = useState(state.todos);
 
-  // React.useEffect(() => {
-  //   if (state.todos.length === 0) {
-  //     apiService.getTodos().then((res) => {
-  //       if (res.data.length !== 0) {
-  //         dispatch({
-  //           type: actions.SET_TODO,
-  //           payload: {
-  //             todos: res.data,
-  //           },
-  //         });
-  //       }
-  //     });
-  //   }
-  // }, [state.todos]);
+  function onAppExit() {
+    user.dispatch({
+      type: "set",
+      payload: {},
+    });
+  }
 
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
+  function setTodos(todos) {
+    todo.dispatch({
+      type: actions.SET_TODO,
+      payload: {
+        todos,
+      },
+    });
+  }
 
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
+  function onDailyClick() {
+    apiService.getTodosDaily(user.state._id).then((res) => {
+      send("Select Daily Todos");
+      setTodos(res.data);
+    });
+  }
+
+  function onDoneClick() {
+    apiService.getTodosDone(user.state._id).then((res) => {
+      send("Select Completed Todos");
+      setTodos(res.data);
+    });
+  }
+
+  function onDeletedClick() {
+    apiService.getTodosDeleted(user.state._id).then((res) => {
+      send("Select Deleted Todos");
+      setTodos(res.data);
+    });
+  }
 
   async function reqTodos() {
     const todosResponse = await apiService.getTodos();
@@ -135,16 +144,19 @@ function Todo(props) {
       ...value,
       user: user.state._id,
     });
+    send("Added New Todo");
     await reqTodos();
   }
 
   async function onUpdate(value) {
     await apiService.updateTodo(value);
+    send("Todo Updated");
     await reqTodos();
   }
 
   async function onRemove(id) {
     await apiService.removeTodo(id);
+    send("Todo Removed");
     dispatch({
       type: actions.REMOVE_TODO,
       payload: {
@@ -163,38 +175,29 @@ function Todo(props) {
   }
 
   function getTodos() {
-    return [...state.todos]
-      .filter((todo, idx) => !todo.completed)
-      .map((todo, idx) => (
-        <ListItem button key={idx}>
-          <TodoItem
-            key={todo._id}
-            todo={todo}
-            onChecked={onChecked}
-            onUpdate={onUpdate}
-            onRemove={onRemove}
-          />
-        </ListItem>
-      ));
-  }
-
-  function selectAllTodos() {
-    dispatch({
-      type: actions.SET_TODO,
-      payload: {
-        todos: [...state.todos].map((t) => ({ ...t, checked: !selectAll })),
-      },
-    });
+    return (
+      [...todos]
+        // .filter((todo, idx) => !todo.completed)
+        .map((todo, idx) => (
+          <ListItem button key={idx}>
+            <TodoItem
+              key={todo._id}
+              todo={todo}
+              onChecked={onChecked}
+              onUpdate={onUpdate}
+              onRemove={onRemove}
+            />
+          </ListItem>
+        ))
+    );
   }
 
   function onDeleteSelected() {
-    var temp = [...state.todos].filter((i) => {
-      if (i.checked === false) {
-        return i;
-      } else {
-        onRemove(i._id);
-      }
+    var temp = [...todos].filter((i) => {
+      if (i.checked === false) return i;
+      else return onRemove(i._id);
     });
+    send("Deleted Selected Todos");
     dispatch({
       type: actions.SET_TODO,
       payload: {
@@ -203,33 +206,26 @@ function Todo(props) {
     });
   }
 
+  function onSearch(event) {
+    let val = event.target.value;
+    if (val.length > 0) {
+      let temp = [...todos].filter(
+        (t) =>
+          (!t.completed &&
+            (t.title.toString().indexOf(val) > -1 ||
+              t.description.toString().indexOf(val) > -1)) ||
+          t.date.toString().indexOf(val) > -1
+      );
+      _setTodos(temp);
+    } else {
+      _setTodos(state.todos);
+    }
+  }
+
   const renderOnDeleteAll = (
     /* !selectAll ? null : */ <IconButton onClick={onDeleteSelected}>
       <DeleteForever />
     </IconButton>
-  );
-
-  const RenderAccountMenu = () => (
-    <Menu
-      id="simple-menu"
-      anchorEl={anchorEl}
-      keepMounted
-      open={Boolean(anchorEl)}
-      onClose={handleClose}
-    >
-      <MenuItem onClick={handleClose}>My account</MenuItem>
-      <MenuItem
-        onClick={() => {
-          handleClose();
-          user.dispatch({
-            type: "clear",
-          });
-          props.onLogout();
-        }}
-      >
-        Logout
-      </MenuItem>
-    </Menu>
   );
 
   return (
@@ -256,27 +252,27 @@ function Todo(props) {
         <Typography className={classes.title} variant="h6" noWrap>
           Todos
         </Typography>
-        <IconButton onClick={handleClick}>
-          <AccountIcon />
-        </IconButton>
-        <RenderAccountMenu />
-        <IconButton>
-          <Badge badgeContent={4} color="primary">
+        <IconButton onClick={onDailyClick}>
+          <Badge
+            badgeContent={stat.state ? stat.state.daily : 0}
+            color="primary"
+          >
             <TodayIcon />
           </Badge>
         </IconButton>
-        <IconButton>
-          <Badge badgeContent={8} color="secondary">
-            <FavIcon />
-          </Badge>
-        </IconButton>
-        <IconButton>
-          <Badge badgeContent={10} color="default">
+        <IconButton onClick={onDoneClick}>
+          <Badge
+            badgeContent={stat.state ? stat.state.completed : 0}
+            color="default"
+          >
             <DoneIcon />
           </Badge>
         </IconButton>
-        <IconButton>
-          <Badge badgeContent={2} color="default">
+        <IconButton onClick={onDeletedClick}>
+          <Badge
+            badgeContent={stat.state ? stat.state.deleted : 0}
+            color="default"
+          >
             <TrashIcon />
           </Badge>
         </IconButton>
@@ -291,24 +287,29 @@ function Todo(props) {
               input: classes.inputInput,
             }}
             inputProps={{ "aria-label": "search" }}
+            onChange={onSearch}
           />
         </div>
         {renderOnDeleteAll}
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={selectAll}
-              onChange={() => {
-                setSelectAll(!selectAll);
-                selectAllTodos();
-              }}
-              name="selectAll"
-            />
-          }
-          label="Select All"
-        />
+        <Button
+          onClick={() => {
+            dispatch({
+              type: actions.SET_TODO,
+              payload: {
+                todos: [...todos].map((t) => ({
+                  ...t,
+                  checked: !t.checked,
+                })),
+              },
+            });
+          }}
+        >
+          Select All
+        </Button>
+        <IconButton onClick={onAppExit}>
+          <ExitToApp />
+        </IconButton>
       </Toolbar>
-      {/* </AppBar> */}
       <List className={classes.listRoot}>{getTodos()}</List>
     </div>
   );

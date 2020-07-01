@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import propType from "prop-types";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
@@ -6,10 +6,27 @@ import ListItemText from "@material-ui/core/ListItemText";
 import FolderIcon from "@material-ui/icons/Folder";
 import CategoryItemMenu from "./CategoryItemMenu";
 import TextField from "@material-ui/core/TextField";
+import { AppContext, actionTypes } from "./../App";
+import * as ApiService from "./../services/api";
 
 function CategoryItem(props) {
   const [name, setName] = useState("");
   const [updateState, setUpdateState] = useState(false);
+  const { user, todo } = useContext(AppContext);
+
+  function onItemClick() {
+    ApiService.getTodosByCategoryAndUser(
+      props.category._id,
+      user.state._id
+    ).then((res) => {
+      todo.dispatch({
+        type: actionTypes.SET_TODO,
+        payload: {
+          todos: res.data,
+        },
+      });
+    });
+  }
 
   function onMenuClose() {
     setName("");
@@ -49,7 +66,7 @@ function CategoryItem(props) {
   }
 
   return (
-    <ListItem button key={props.category._id}>
+    <ListItem button key={props.category._id} onClick={onItemClick}>
       <ListItemIcon>
         <FolderIcon style={{ color: props.category.color }} />
       </ListItemIcon>

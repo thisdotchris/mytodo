@@ -21,7 +21,10 @@ export function reducer(state, action) {
       return produce(state, (draft) => {
         draft.todos = draft.todos.map((todo) => {
           if (todo._id === action.payload.todo._id) {
-            todo = action.payload.todo;
+            // todo = action.payload.todo;
+            Object.keys(action.payload.todo).forEach((k) => {
+              todo[k] = action.payload.todo[k];
+            });
           }
           return todo;
         });

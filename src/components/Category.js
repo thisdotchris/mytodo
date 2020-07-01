@@ -10,6 +10,8 @@ import Toolbar from "@material-ui/core/Toolbar";
 import Typography from "@material-ui/core/Typography";
 import CategoryForm from "./CategoryForm";
 import * as apiService from "./../services/api";
+import Button from "@material-ui/core/Button";
+import { send } from "./../services/emitter";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -23,23 +25,9 @@ function Category() {
   console.log("Category render...");
 
   const classes = useStyles();
-  const { category, user } = useContext(AppContext);
+  const { category, user, todo } = useContext(AppContext);
   const { state, dispatch } = category;
   const [open, setOpen] = useState(false);
-
-  // React.useEffect(() => {
-  //   if (state.categories.length === 0) {
-  //     apiService.getUserCategory(user.state._id).then((res) => {
-  //       console.log(res.data);
-  //       dispatch({
-  //         type: actions.SET_CATEGORY,
-  //         payload: {
-  //           categories: res.data.categories,
-  //         },
-  //       });
-  //     });
-  //   }
-  // });
 
   async function onAdd(val) {
     const addedCategory = await apiService.createCategory({
@@ -51,6 +39,7 @@ function Category() {
       _id: user.state._id,
       categories: [...user.state.categories, addedCategory.data._id],
     });
+    send("Added New Category");
     dispatch({
       type: actions.ADD_CATEGORY,
       payload: {
@@ -62,6 +51,7 @@ function Category() {
 
   function onRemove(_id) {
     apiService.removeCategory(_id).then((res) => {
+      send("Category Removed");
       dispatch({
         type: actions.REMOVE_CATEGORY,
         payload: {
@@ -73,6 +63,7 @@ function Category() {
 
   function onUpdate(category) {
     apiService.updateCategory(category).then((res) => {
+      send("Category Updated");
       dispatch({
         type: actions.UPDATE_CATEGORY,
         payload: {
@@ -82,9 +73,21 @@ function Category() {
     });
   }
 
+  function onSelectAll() {
+    todo.dispatch({
+      type: actions.SET_TODO,
+      payload: {
+        todos: user.state.todos,
+      },
+    });
+  }
+
   function showCategorie() {
     return (
       <div>
+        <Button fullWidth onClick={onSelectAll}>
+          All
+        </Button>
         <List component="nav" className={classes.root}>
           {state.categories.map((cat) => (
             <CategoryItem

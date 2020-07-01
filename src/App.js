@@ -10,6 +10,7 @@ import Grid from "@material-ui/core/Grid";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import ForgotPassword from "./components/ForgotPassword";
+import Notif from "./components/Notif";
 
 export const actionTypes = ActionTypes;
 
@@ -29,7 +30,7 @@ export const AppContext = React.createContext({
   category: {},
   todo: {},
   preview: {},
-  statistics: {},
+  stat: {},
 });
 
 function App() {
@@ -68,10 +69,20 @@ function App() {
     }
   }, {});
 
+  const [statState, statDispatch] = useReducer((state, action) => {
+    switch (action.type) {
+      case "set":
+        return (state = { ...action.payload });
+      default:
+        return {};
+    }
+  });
+
   /**
    * App Context Value
    */
   const value = {
+    stat: { state: statState, dispatch: statDispatch },
     user: { state: userState, dispatch: userDispatch },
     todo: { state: todoState, dispatch: todoDispatch },
     category: { state: categoryState, dispatch: categoryDispatch },
@@ -113,7 +124,12 @@ function App() {
     }
   };
 
-  return <AppContext.Provider value={value}>{isLogin()}</AppContext.Provider>;
+  return (
+    <AppContext.Provider value={value}>
+      <Notif />
+      {isLogin()}
+    </AppContext.Provider>
+  );
 }
 
 export default App;

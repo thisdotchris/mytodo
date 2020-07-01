@@ -123,9 +123,6 @@ function TodoItem(props) {
         }
         title={props.todo.title}
         subheader={new Date(props.todo.date).toDateString()}
-        onClick={() => {
-          // emitter.emit(props.todo);
-        }}
       />
       <CardContent>{props.todo.description}</CardContent>
       {renderCardAction}

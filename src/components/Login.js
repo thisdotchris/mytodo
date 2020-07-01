@@ -1,20 +1,16 @@
 import React from "react";
-import Avatar from "@material-ui/core/Avatar";
 import Button from "@material-ui/core/Button";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import TextField from "@material-ui/core/TextField";
-import FormControlLabel from "@material-ui/core/FormControlLabel";
-import Checkbox from "@material-ui/core/Checkbox";
 import Link from "@material-ui/core/Link";
 import Grid from "@material-ui/core/Grid";
-import Box from "@material-ui/core/Box";
-import LockOutlinedIcon from "@material-ui/icons/LockOutlined";
 import Typography from "@material-ui/core/Typography";
 import { makeStyles } from "@material-ui/core/styles";
 import Container from "@material-ui/core/Container";
 import * as apiService from "./../services/api";
 import { AppContext } from "../App";
 import * as actionTypes from "./../reducers/ActionTypes";
+import { send } from "./../services/emitter";
 
 const useStyles = makeStyles((theme) => ({
   paper: {
@@ -40,28 +36,37 @@ function Login(props) {
   const classes = useStyles();
   const [username, setUsername] = React.useState();
   const [password, setPassword] = React.useState();
-  const { user, category, todo } = React.useContext(AppContext);
+  const { user, category, todo, stat } = React.useContext(AppContext);
 
   function onSubmit() {
-    console.log(username, password);
     apiService.auth(username, password).then((res) => {
-      user.dispatch({
-        type: "set",
-        payload: {
-          ...res.data,
-        },
-      });
-      category.dispatch({
-        type: actionTypes.SET_CATEGORY,
-        payload: {
-          categories: res.data.categories,
-        },
-      });
-      todo.dispatch({
-        type: actionTypes.SET_TODO,
-        payload: {
-          todos: res.data.todos,
-        },
+      apiService.getStat(res.data._id).then((statRes) => {
+        user.dispatch({
+          type: "set",
+          payload: {
+            ...res.data,
+          },
+        });
+        stat.dispatch({
+          type: "set",
+          payload: {
+            ...statRes.data,
+          },
+        });
+        category.dispatch({
+          type: actionTypes.SET_CATEGORY,
+          payload: {
+            categories: res.data.categories,
+          },
+        });
+        todo.dispatch({
+          type: actionTypes.SET_TODO,
+          payload: {
+            todos: res.data.todos,
+          },
+        });
+
+        send("Login Successfully");
       });
     });
   }
